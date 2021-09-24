@@ -1,58 +1,131 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-import pandas as pd
 import streamlit as st
-import numpy as np
-import time
-st.title('Occupancy detection selection tool')
+import itertools
+import pandas as pd
+from itertools import combinations
 
-q1=st.text_input("Are there energy code compliance requirements? (Yes/No)")
+info_app={'Occ_Res':[4,4,2,3,3,3,2,1,2,1,1,2,2],
+          'Spatial_Res':[3,3,2,3,3,2,3,2,2,3,4,2,4],
+          'Accuracy':[3,3,2,3,3,3,2,1,1,3,2,1,1],
+          }
+info_app_1={'Occ_Res':['Tracking','Tracking','Count','Identity','Identity','Identity','Count','Presence','Count','Presence','Presence','Count','Count'],
+          'Spatial_Res':['Room','Room','Floor','Room','Room','Floor','Room','Floor','Floor','Room','Workstation','Floor','Floor'],
+          'Accuracy':['High','High','Medium','High','High','High','Medium','Low','Low','High','Medium','Low','Low'],
+          }
+columns=['Occ_Res','Spatial_Res','Accuracy']
+df=pd.DataFrame(data=info_app,columns=columns,index=['Emergency evacuation and rescue','Contact tracing','Space utilization rate','Access control','Intrusion detection',
+    'Surveillance','Smart cleaning','Heating/cooling','DCV','Lighting','Smart plugs','Heating/cooling usage','Plugload usage'])
+df_1=pd.DataFrame(data=info_app_1,columns=columns,index=['Emergency evacuation and rescue','Contact tracing','Space utilization rate','Access control','Intrusion detection',
+    'Surveillance','Smart cleaning','Heating/cooling','DCV','Lighting','Smart plugs','Heating/cooling usage','Plugload usage'])
+st.dataframe(df_1)
 
-if q1 in ["No","NO","no"]:
-    q2 = st.text_input("Would you like occupancy based controls? (Yes/No)")
-    if q2 in ["No","NO","no"]:
-        st.write("Other control strategies are more appropriate")
-    if q2 in ["Yes","YES","yes"]:
-        q3 = st.text_input("Does space contain partitions, large equipment or furniture?")
-if q1 in ["Yes", "YES", "yes"]:
-        q3 = st.text_input("Does space contain partitions, large equipment or furniture?")
-        if q3 in ["No", "NO", "no"]:
-            st.write("Cameras/vision sensors, PIR, break beam sensors")
-        if q3 in ["Yes", "YES", "yes"]:
-            q4 = st.text_input("Is space small or well defined?")
-            if q4 in ["Yes", "YES", "yes"]:
-                q5 = st.text_input("Is there a clear line of sight to all areas?")
-                if q5 in ["No","NO","no"]:
-                    st.write("Radio frequency-based technology, ultrasonic and smart meters ")
-                if q5 in ["Yes", "YES", "yes"]:
-                    q6 = st.text_input("Would installation of additional sensors justify payback?")
-                    if q6 in ["Yes", "YES", "yes"]:
-                        st.write("Cameras/vision sensors, PIR, break beam sensors, electro-mechanical sensors")
-                    if q6 in ["No","NO","no"]:
-                        st.write("Wi-Fi, Building data")
-            if q4 in ["No","NO","no"]:
-                q7 = st.text_input("Are there definite space boundaries?")
-                if q7 in ["No", "NO", "no"]:
-                    st.write("Ultrasonic, microwave, radio frequency-based technology")
-                if q7 in ["Yes", "YES", "yes"]:
-                    q8 = st.text_input("Is there a high volume of air flow and non-human heat sources?")
-                    if q8 in ["Yes", "YES", "yes"]:
-                        q9 = st.text_input("Can owners choose an appropriate mounting location away from air flow?")
-                        if q9 in ["Yes", "YES", "yes"]:
-                            st.write("Ultrasonic, microwave, PIR, infrared camera, acoustic and CO2 sensor")
-                        if q9 in ["No", "NO", "no"]:
-                            st.write("""Radio frequency-based technology, TOF, Binocular SL depth and optical cameras, 
-                            smart meters, electro-mechanical sensors""")
-                    if q8 in ["No","NO","no"]:
-                        q10 = st.text_input("Is there moving mechanical equipment in the space?")
-                        if q10 in ["No", "NO", "no"]:
-                            st.write("""Radio frequency-based technology, TOF, Binocular SL depth and optical cameras, 
-                            smart meters, electro-mechanical sensors""")
-                        if q10 in ["Yes", "YES", "yes"]:
-                            st.write("Radio frequency-based technology, smart meters")
+def multiselectdataframe(df_0):
+    with st.form(key="Selecting columns"):
+        q1 = st.multiselect('Choose the desired application', df_0.index)
+        submit_button=st.form_submit_button(label='Submit')
+        if submit_button:
+            app_result = df_0.loc[q1]
+            st.write('Selected Application', app_result)
+            return app_result
+
+result_1=multiselectdataframe(df_1)
+app_selected=pd.DataFrame(data=result_1,columns=columns)
+app_selected.update(df)
+
+max_occ_res = app_selected.Occ_Res.max()
+max_spatial_res = app_selected.Spatial_Res.max()
+max_acc = app_selected.Accuracy.max()
+
+min_occ_res = app_selected.Occ_Res.min()
+min_spatial_res = app_selected.Spatial_Res.min()
+min_acc = app_selected.Accuracy.min()
+
+info_sensor_0={
+            'Occ_Res':[2,2,3,3,3,2,2,1],
+             'Spatial_Res':[4,4,4,3,3,3,3,4],
+             'Accuracy':[1,3,3,3,3,2,1,1],
+             'Tracking':[0,0,0,1,1,0,0,0],
+             'Privacy':[3,3,1,1,1,3,3,3],
+             'Cost':[1,3,3,1,2,1,1,1]}
+info_sensor_1={
+            'Occ_Res':['Presence','Count','Identity','Tracking','Tracking','Count','Count','Presence'],
+             'Spatial_Res':['Workstation','Workstation','Workstation','Workstation','Room','Room','Room','Room'],
+             'Accuracy':['Low','High','High','High','High','Medium','Low','Low'],
+             'Privacy':['High','High','Low','Low','Low','High','High','High'],
+             'Cost':['Low','High','High','Low','Medium','Low','Low','Low dds']}
+
+columns_sensor=['Occ_Res','Spatial_Res','Accuracy','Privacy','Cost']
+df_0=pd.DataFrame(data=info_sensor_0,columns=columns_sensor,index=['PIR/Break beam/Ultrasonic/Microwave','TOF/Binocular/SL/Infrared camera','Optical camera',
+                                                            'Wi-Fi','RFID tag/UWB/Bluetooth','Acoustic/Smart meters','Door/CO2','Piezoelectric'])
+df1_1=pd.DataFrame(data=info_sensor_1,columns=columns_sensor,index=['PIR/Break beam/Ultrasonic/Microwave','TOF/Binocular/SL/Infrared camera','Optical camera',
+                                                            'Wi-Fi','RFID tag/UWB/Bluetooth','Acoustic/Smart meters','Door/CO2','Piezoelectric'])
+@st.cache
+def r_subset(arr, r):
+    return list(combinations(arr, r))
+
+def Convert(string):
+    li=list(string.split(",",))
+    return li
+Menu_Items=["View all sensors","Select single type sensor based on application criteria","Select combination of sensors based on application criteria"]
+Menu_Choices =st.selectbox('Select the options',Menu_Items)
+
+if Menu_Choices == "View all sensors":
+    st.write("Below are all the sensors Available")
+    st.dataframe(df1_1)
+if Menu_Choices == "Select single type sensor based on application criteria":
+    filter_table1=df_0.loc[(df_0['Occ_Res']>=max_occ_res)&(df_0['Accuracy']>=max_acc)&(df_0['Spatial_Res']>=max_spatial_res)]
+    Menu_Items1 = ["Customize further","Not applicable"]
+    Menu_Choices1 = st.selectbox('Select the options', Menu_Items1)
+    if Menu_Choices1 == "Customize further":
+        with st.form(key='my_form'):
+            q2 = st.selectbox('What is the desired level of privacy for your office?', [1,2,3])
+            q3 = st.selectbox('I prefer to keep the cost:', [1,2,3])
+            q4 = st.selectbox('Are cameras good for installation', ['Yes','No'])
+            submit_button_0=st.form_submit_button(label='Submit')
+            if submit_button_0:
+                if q4=='Yes':
+                    filter_table2=filter_table1.loc[(filter_table1['Cost']<=q3)&(filter_table1['Privacy']>=q2)]
+                    filter_table2.update(df1_1)
+                    st.dataframe(filter_table2)
+                if q4=='No':
+                    filter_table1=filter_table1[filter_table1.index !=('TOF/Binocular/SL/Infrared camera','Optical camera')]
+                    filter_table4=filter_table1.loc[(filter_table1['Cost']<=q3)&(filter_table1['Privacy']>=q2)]
+                    filter_table4.update(df1_1)
+                    st.dataframe(filter_table4)
+    if Menu_Choices1 == "Not applicable":
+        filter_table1.update(df1_1)
+        st.dataframe(filter_table1)
+
+if Menu_Choices == "Select combination of sensors based on application criteria":
+    info_sensor_0 = {'Sensor':['PIR/Break beam/Ultrasonic/Microwave','TOF/Binocular/SL/Infrared camera','Optical camera',
+                                                            'Wi-Fi','RFID tag/UWB/Bluetooth','Acoustic/Smart meters','Door/CO2','Piezoelectric'],
+        'Occ_Res': [2, 2, 3, 3, 3, 2, 2, 1],
+        'Spatial_Res': [4, 4, 4, 3, 3, 3, 3, 4],
+        'Accuracy': [1, 3, 3, 3, 3, 2, 1, 1],
+        'Privacy': [3, 3, 1, 1, 1, 3, 3, 3],
+        'Cost': [1, 3, 3, 1, 2, 1, 1, 1]}
+    columns_0 = ['Sensor', 'Occ_Res', 'Spatial_Res', 'Accuracy', 'Privacy', 'Cost']
+    df_0 = pd.DataFrame(data=info_sensor_0, columns=columns_0,index=['PIR/Break beam/Ultrasonic/Microwave', 'TOF/Binocular/SL/Infrared camera',
+                               'Optical camera','Wi-Fi', 'RFID tag/UWB/Bluetooth', 'Acoustic/Smart meters', 'Door/CO2', 'Piezoelectric'])
+    min_table = df_0.loc[(min_occ_res <= df_0['Occ_Res'])&(min_acc <= df_0['Accuracy'])&(min_spatial_res <= df_0['Spatial_Res'])]
+    sensor=min_table['Sensor']
+
+    for f in range(len(sensor) + 1):  # iterate number of items in combination
+        if f>=2:
+            for i in r_subset(sensor, f):  # iterate over every combination
+                is_ok = False
+                for key in i:  # iterate over any item in a combination
+                    multi_row = min_table[min_table['Sensor'].isin(Convert(key))]
+                    value_occ_res = multi_row.Occ_Res.item()
+                    value_spatial_res = multi_row.Spatial_Res.item()
+                    value_acc = multi_row.Accuracy.item()
+                    if (value_occ_res >= max_occ_res) and (value_spatial_res <= max_spatial_res) and (value_acc <= max_acc):  # pick any item in a  combination that meets the criteria
+                        is_ok = True
+                    if is_ok:
+                        info=df_0.loc[i,:]
+                        info=info.drop(columns='Sensor')
+                        info.update(df1_1)
+                        st.dataframe(info)
+
 
 
 
